@@ -972,198 +972,334 @@ renderHistory();
 ===================================================== */
 
 // ── RAG DOCUMENT STORE ──────────────────────────────
-// Each document is a chunk of the knowledge base.
-// In a real system these would be embedded vectors;
-// here we do lightweight keyword-cosine similarity.
+// Each document represents a KB article with title, ID, section, and content.
+// Retrieval uses lightweight keyword scoring (tag × 3 + content frequency × 1).
 const RAG_DOCUMENTS = [
   {
-    id: 'charging',
-    tags: ['charging','not charging','battery','charger','adapter','port','plugged in'],
-    content: `ISSUE: Device not charging.
-CAUSE: Faulty power adapter, damaged cable, dirty charging port, or battery management issue.
-STEPS:
-1. Check the power socket works with another device.
-2. Inspect cable & adapter for damage, fraying, or bent pins.
-3. Clean the charging port with a dry toothbrush or compressed air.
-4. Try a different compatible charger or cable.
-5. Perform a soft restart.
-6. On laptops — update battery driver or check battery health settings.
-7. If still failing, port or battery needs hardware inspection.
-SAFETY: If swollen battery or burning smell — STOP immediately, do not charge.
-CONFIDENCE: High | ESCALATION: No`
+    id: 'KB-001',
+    title: 'Device Not Charging — Troubleshooting Guide',
+    section: 'Power & Charging',
+    tags: ['charging','not charging','battery','charger','adapter','port','plugged in','wont charge','no charge'],
+    content: `DOCUMENT: KB-001 | Device Not Charging — Troubleshooting Guide | Section: Power & Charging
+LAST UPDATED: 2025-01
+APPLIES TO: Laptops, Mobile Phones, Tablets
+
+ISSUE: Device not charging or charging indicator not lighting up.
+
+POSSIBLE CAUSE: Faulty power adapter, damaged charging cable, dirty or damaged charging port, software/battery management issue, or failed battery cell.
+
+VERIFIED TROUBLESHOOTING STEPS:
+1. Check that the power socket is working by testing with another device.
+2. Inspect the charging cable and adapter for visible damage, fraying, or bent pins.
+3. Clean the charging port gently with a dry toothbrush or compressed air to remove dust/lint.
+4. Try using a different compatible charger or cable if available.
+5. Perform a soft restart of the device.
+6. On laptops — check Device Manager for battery driver issues; update or reinstall battery driver.
+7. Check battery health status in system settings (Windows: powercfg /batteryreport).
+8. If none of the above work, the charging port or battery may need hardware inspection.
+
+ESCALATION REQUIRED: If problem persists after all steps — Yes. Contact authorized service center.
+SAFETY NOTE: If battery is swollen, emitting smell, or warm to touch — stop immediately. Do not charge. Escalate.
+CONFIDENCE: High`
   },
   {
-    id: 'wifi',
-    tags: ['wifi','wi-fi','internet','router','network','disconnecting','no internet','connection'],
-    content: `ISSUE: Wi-Fi not working or keeps disconnecting.
-CAUSE: Router/modem fault, incorrect network settings, IP conflict, or ISP outage.
-STEPS:
-1. Restart the router & modem — unplug 30 seconds, plug back in.
-2. Check if other devices can connect to the same network.
-3. Forget the Wi-Fi network and reconnect with the password.
-4. Check router indicator lights — red/off Internet light = ISP issue.
-5. Move closer to the router to rule out distance issues.
-6. Disable and re-enable Wi-Fi on the device.
-7. If only your device fails — restart it or reset network settings.
-8. If no device works — contact ISP.
-CONFIDENCE: High | ESCALATION: Maybe`
+    id: 'KB-002',
+    title: 'Wi-Fi Connectivity Issues — Troubleshooting Guide',
+    section: 'Network & Connectivity',
+    tags: ['wifi','wi-fi','internet','router','network','disconnecting','no internet','connection','keeps dropping'],
+    content: `DOCUMENT: KB-002 | Wi-Fi Connectivity Issues — Troubleshooting Guide | Section: Network & Connectivity
+LAST UPDATED: 2025-01
+APPLIES TO: All devices, Wi-Fi Routers, Home Networks
+
+ISSUE: Wi-Fi not working, internet keeps disconnecting, or device cannot find the network.
+
+POSSIBLE CAUSE: Router/modem fault, ISP outage, incorrect network configuration, IP address conflict, or driver/firmware issue.
+
+VERIFIED TROUBLESHOOTING STEPS:
+1. Restart the router and modem — unplug power for 30 seconds, then plug back in. Wait 2 minutes.
+2. Check if other devices can connect to the same Wi-Fi network to isolate the problem.
+3. On your device — forget the Wi-Fi network and reconnect by entering the password fresh.
+4. Check router indicator lights — a red or off "Internet/WAN" light indicates an ISP outage.
+5. Move closer to the router to rule out signal distance or interference issues.
+6. Disable and re-enable the Wi-Fi adapter on your device.
+7. If only one device is affected — restart the device and check for OS/driver updates.
+8. If all devices fail — contact your Internet Service Provider (ISP) directly.
+9. For routers: log into admin panel (192.168.1.1) and check WAN settings or firmware updates.
+
+ESCALATION REQUIRED: If ISP indicator is red/off — contact ISP. If device-specific — Maybe.
+CONFIDENCE: High`
   },
   {
-    id: 'printer',
-    tags: ['printer','printing','print','ink','toner','paper jam','offline','queue'],
-    content: `ISSUE: Printer not printing or showing offline.
-CAUSE: Empty ink/toner, paper jam, stuck print queue, or lost connection.
-STEPS:
-1. Check the paper tray is loaded correctly and not jammed.
-2. Check ink or toner levels from settings or companion app.
-3. Open print queue, cancel all pending/stuck jobs, retry.
-4. Restart the printer — off 30 seconds, then on.
-5. USB: unplug & re-plug. Wi-Fi: ensure both devices are on same network.
-6. Print a test page from the printer control panel.
-7. Update/reinstall the printer driver from manufacturer website.
-8. Ensure correct default printer is selected.
-CONFIDENCE: High | ESCALATION: No`
+    id: 'KB-003',
+    title: 'Printer Not Printing / Showing Offline — Troubleshooting Guide',
+    section: 'Peripheral Devices',
+    tags: ['printer','printing','print','ink','toner','paper jam','offline','queue','canon','hp','epson'],
+    content: `DOCUMENT: KB-003 | Printer Not Printing / Offline — Troubleshooting Guide | Section: Peripheral Devices
+LAST UPDATED: 2025-01
+APPLIES TO: All printer brands (HP, Canon, Epson, Brother)
+
+ISSUE: Printer not printing, showing as offline, or print jobs stuck in queue.
+
+POSSIBLE CAUSE: Empty ink/toner, paper jam, stuck print queue, lost USB/Wi-Fi connection, outdated driver, or wrong default printer selected.
+
+VERIFIED TROUBLESHOOTING STEPS:
+1. Check the paper tray — ensure paper is loaded correctly with no jams.
+2. Check ink or toner levels from the printer's settings panel or companion app.
+3. On your computer — open print queue, cancel ALL pending/stuck jobs, then retry.
+4. Restart the printer — power off completely, wait 30 seconds, power back on.
+5. USB connection: unplug and re-plug the USB cable. Wi-Fi: verify both devices are on the same network.
+6. Print a test page directly from the printer control panel to isolate PC vs. printer issues.
+7. Update or reinstall the printer driver from the manufacturer's official website.
+8. Ensure the correct default printer is selected in Settings → Devices → Printers.
+9. For "Offline" status: right-click printer → See what's printing → Printer → Uncheck "Use Printer Offline".
+
+ESCALATION REQUIRED: No — for software/connectivity issues. Yes — if test page also fails (hardware fault).
+CONFIDENCE: High`
   },
   {
-    id: 'overheating',
-    tags: ['overheating','hot','overheat','temperature','heating','warm','fan','thermal'],
-    content: `ISSUE: Device overheating.
-CAUSE: Blocked vents, heavy background processes, outdated firmware, or failing cooling system.
-STEPS:
-1. Close all unnecessary background apps.
-2. Remove phone case / ensure laptop has ventilation clearance.
-3. Do not use on soft surfaces (bed, couch) that block vents.
-4. Check for and install software or firmware updates.
-5. Avoid charging while running heavy tasks.
-6. Run a malware scan — malware can spike CPU load.
-7. For laptops, clean fan vents with compressed air (don't open device).
-8. Let the device cool down before resuming use.
-SAFETY: Battery swelling, burning smell, or smoke → STOP using immediately.
-CONFIDENCE: Medium | ESCALATION: Maybe`
+    id: 'KB-004',
+    title: 'Device Overheating — Diagnosis & Safety Guide',
+    section: 'Hardware & Performance',
+    tags: ['overheating','hot','overheat','temperature','heating','warm','fan','thermal','heat','too hot'],
+    content: `DOCUMENT: KB-004 | Device Overheating — Diagnosis & Safety Guide | Section: Hardware & Performance
+LAST UPDATED: 2025-01
+APPLIES TO: Laptops, Mobile Phones, Tablets
+
+ISSUE: Device getting very hot during use or charging.
+
+POSSIBLE CAUSE: Blocked ventilation, excessive background processes, outdated firmware, malware activity, failing cooling fan, or degraded thermal paste (laptops).
+
+VERIFIED TROUBLESHOOTING STEPS:
+1. Close all unnecessary background apps and processes immediately.
+2. Remove the phone case / ensure the laptop has unobstructed ventilation on all sides.
+3. Do not use the device on soft surfaces (bed, pillow, carpet) that block air intake vents.
+4. Check for and install all available software or firmware updates.
+5. Avoid charging the device while running graphics-intensive apps or games.
+6. Run a full malware scan — malicious software can cause abnormal CPU/GPU load.
+7. For laptops: use compressed air to clean fan vents (external only — do not open chassis).
+8. Allow the device to cool down for at least 15 minutes before resuming use.
+9. Monitor CPU usage via Task Manager (Windows) or Activity Monitor (Mac).
+
+SAFETY ESCALATION: Battery swelling, burning smell, smoke, or sparks → STOP IMMEDIATELY. Do not charge. Contact authorized technician.
+ESCALATION REQUIRED: Maybe — if overheating continues after all steps.
+CONFIDENCE: Medium`
   },
   {
-    id: 'software_install',
-    tags: ['install','installation','setup','software','error code','administrator','antivirus','driver'],
-    content: `ISSUE: Software installation failing or setup errors.
-CAUSE: Insufficient storage, incompatible system requirements, permission issues, or corrupted installer.
-STEPS:
-1. Verify system requirements match your device specs.
-2. Free up storage — need at least 2x installer file size available.
-3. Right-click installer → Run as Administrator (Windows).
-4. Temporarily disable antivirus (trusted software only), retry install.
-5. Restart device and retry installation.
-6. Delete installer and re-download from official source only.
-7. Ensure system date & time are correct — wrong time causes cert errors.
-8. Search the specific error code on the official support page.
-CONFIDENCE: High | ESCALATION: No`
+    id: 'KB-005',
+    title: 'Software Installation Failures — Troubleshooting Guide',
+    section: 'Software & OS',
+    tags: ['install','installation','setup','software','error code','administrator','antivirus','driver','setup failed','install error'],
+    content: `DOCUMENT: KB-005 | Software Installation Failures — Troubleshooting Guide | Section: Software & OS
+LAST UPDATED: 2025-01
+APPLIES TO: Windows, macOS
+
+ISSUE: Software setup fails mid-install, shows error codes, or installer crashes.
+
+POSSIBLE CAUSE: Insufficient storage, incompatible OS version, blocked administrator permissions, active antivirus interference, or corrupted installer download.
+
+VERIFIED TROUBLESHOOTING STEPS:
+1. Verify the software's official system requirements and confirm your device meets all of them.
+2. Free up storage space — ensure at least 2× the installer file size is available on the target drive.
+3. Right-click the installer → "Run as Administrator" (Windows) before launching.
+4. Temporarily disable your antivirus/security software — ONLY if the source is verified official. Re-enable after install.
+5. Restart your device and retry the installation from scratch.
+6. Delete the existing installer and re-download from the official/manufacturer source only.
+7. Ensure system date and time are correct — incorrect time settings cause SSL/certificate errors.
+8. Search the specific error code shown on the official support site for that software.
+9. For error 0x80070005 (Access Denied): run installer as admin + disable UAC temporarily (revert after).
+10. For error 0x800F0922: check Windows Update service is running; try offline installer.
+
+ESCALATION REQUIRED: No — for most install errors. Yes — for licensing/activation failures or enterprise deployments.
+CONFIDENCE: High`
   },
   {
-    id: 'not_turning_on',
-    tags: ['wont turn on','not turning on','dead','black screen','no power','power button','boot'],
-    content: `ISSUE: Device won't turn on.
-CAUSE: Drained battery, failed power button, software crash, or hardware fault.
-STEPS:
-1. Connect to power source, charge for at least 30 minutes before trying again.
-2. Laptop: remove battery (if removable), hold power button 15 sec, reinsert, retry.
-3. Force/hard restart — hold power button 10-15 seconds.
-4. Verify power adapter and cable are working.
-5. Check LED indicator lights up when plugged in.
-6. Desktop: confirm power cable firmly connected at outlet and PSU.
-7. Connect external monitor — device may be on but screen is dead.
-CONFIDENCE: Medium | ESCALATION: Maybe`
+    id: 'KB-006',
+    title: 'Device Not Turning On — Power & Boot Troubleshooting',
+    section: 'Hardware & Power',
+    tags: ['wont turn on','not turning on','dead','black screen','no power','power button','boot','startup','won\'t start','not starting'],
+    content: `DOCUMENT: KB-006 | Device Not Turning On — Power & Boot Troubleshooting | Section: Hardware & Power
+LAST UPDATED: 2025-01
+APPLIES TO: Laptops, Mobile Phones, Desktops, Tablets
+
+ISSUE: Device shows no response when power button is pressed — completely dead or black screen.
+
+POSSIBLE CAUSE: Fully drained battery, failed power button, software crash/bootloop, hardware fault, or failed display (device may be on but screen dead).
+
+VERIFIED TROUBLESHOOTING STEPS:
+1. Connect to a known-working power source and charge for at least 30–45 minutes before retrying.
+2. Laptop with removable battery: remove battery → hold power button 15 seconds → reinsert → try again.
+3. Force/hard restart: hold the power button for 10–15 seconds until the device restarts.
+4. Verify that the power adapter and cable are functioning (test with a multimeter or alternate device).
+5. Check the charging LED indicator — if it lights up when plugged in, the device is receiving power.
+6. Desktop: verify the power cable is firmly connected at both the outlet and the PSU switch (ensure PSU is ON).
+7. Connect an external monitor — the device may be powered on but the internal display has failed.
+8. Try booting in Safe Mode (hold F8 on Windows at startup) to isolate software issues.
+
+ESCALATION REQUIRED: Maybe — if charging and hard reset both fail, hardware diagnosis is required.
+CONFIDENCE: Medium`
   },
   {
-    id: 'login',
-    tags: ['login','password','sign in','locked out','account','2fa','authentication','forgot password'],
-    content: `ISSUE: Can't log in / account access problem.
-CAUSE: Forgotten credentials, account lockout, 2FA issues, or browser cache problems.
-STEPS:
-1. Use "Forgot Password" / "Reset Password" on the login page.
-2. Check Caps Lock is off — passwords are case-sensitive.
-3. Clear browser cache and cookies, retry.
-4. Try a different browser or incognito/private window.
-5. Confirm you're using the correct email address for the account.
-6. 2FA not arriving — check spam folder, verify phone number is correct.
-7. Account locked — wait 15-30 minutes before trying again.
-8. Contact the platform's official support if all else fails.
-CONFIDENCE: High | ESCALATION: No`
+    id: 'KB-007',
+    title: 'Login & Account Access Issues — Troubleshooting Guide',
+    section: 'Account & Security',
+    tags: ['login','password','sign in','locked out','account','2fa','authentication','forgot password','cannot login','access denied'],
+    content: `DOCUMENT: KB-007 | Login & Account Access Issues — Troubleshooting Guide | Section: Account & Security
+LAST UPDATED: 2025-01
+APPLIES TO: Web applications, Desktop software, Mobile apps, OS login
+
+ISSUE: Cannot log in, account locked, password not working, or 2FA codes not arriving.
+
+POSSIBLE CAUSE: Incorrect credentials, account lockout after failed attempts, 2FA misconfiguration, browser cache, or account suspension.
+
+VERIFIED TROUBLESHOOTING STEPS:
+1. Use the official "Forgot Password" / "Reset Password" link on the login page.
+2. Check Caps Lock is OFF — passwords are case-sensitive on all platforms.
+3. Clear browser cache and cookies completely, then retry in a fresh browser session.
+4. Try a different browser or an incognito/private window to rule out extension interference.
+5. Confirm you are using the exact email address associated with the account.
+6. 2FA code not arriving: check spam folder, verify the phone number, check time sync on authenticator app.
+7. Account locked: wait 15–30 minutes before trying again — most platforms auto-unlock after a cooldown.
+8. If the account may be compromised, use the official account recovery page immediately.
+9. Contact the platform's official customer support with your account email if all steps fail.
+
+ESCALATION REQUIRED: No — for standard credential issues. Yes — if account is compromised or suspended.
+CONFIDENCE: High`
   },
   {
-    id: 'error_codes',
-    tags: ['error code','0x','error number','bsod','blue screen','crash','error message'],
-    content: `ISSUE: Specific error code or crash message shown.
-CAUSE: Error codes indicate system, software, or hardware faults specific to the product.
-STEPS:
-1. Note the exact error code shown on screen.
-2. Restart device and check if error reappears.
-3. Search the error code on the official manufacturer support site.
-4. Check for pending system or software updates.
-5. Reinstall related software or driver if applicable.
-6. If error appeared after an update, consider rolling it back.
-7. Contact official support with the exact error code.
-CONFIDENCE: Medium | ESCALATION: Maybe`
+    id: 'KB-008',
+    title: 'Error Codes — General Diagnostic Reference',
+    section: 'Diagnostics & Error Codes',
+    tags: ['error code','0x','error number','bsod','blue screen','crash','error message','stop code','error'],
+    content: `DOCUMENT: KB-008 | Error Codes — General Diagnostic Reference | Section: Diagnostics & Error Codes
+LAST UPDATED: 2025-01
+APPLIES TO: Windows, macOS, All devices
+
+ISSUE: A specific error code or crash message is displayed and the user needs guidance.
+
+POSSIBLE CAUSE: Error codes are platform-specific and indicate system, driver, software, or hardware faults. Common Windows errors include 0x8XXXXXXX codes; macOS shows kernel panic logs.
+
+VERIFIED TROUBLESHOOTING STEPS:
+1. Write down or photograph the exact error code — precision matters (0x80070005 ≠ 0x8007000E).
+2. Restart the device and check if the error reappears — some errors are transient.
+3. Search the exact error code on the official manufacturer or OS support site:
+   — Windows errors: support.microsoft.com
+   — Apple errors: support.apple.com
+   — Linux: check dmesg log or distro wiki
+4. Check for and install all pending system or software updates.
+5. Reinstall the related software, driver, or Windows component if applicable.
+6. If the error appeared after a recent update — use System Restore or roll back the update.
+7. Run Windows Memory Diagnostic or Apple Diagnostics to check for hardware faults.
+8. Collect the full error log and provide it to official support with the exact code.
+
+ESCALATION REQUIRED: Maybe — depends on error type. Hardware-related codes require technician diagnosis.
+CONFIDENCE: Medium`
   },
   {
-    id: 'bluetooth',
-    tags: ['bluetooth','pairing','headphones','speaker','earbuds','airpods','not connecting','bt'],
-    content: `ISSUE: Bluetooth device not connecting or pairing.
-CAUSE: Device not in pairing mode, interference, outdated drivers, or too many saved devices.
-STEPS:
-1. Turn Bluetooth OFF and ON again on both devices.
-2. Put the accessory in pairing mode (usually hold power button 5-10 sec until LED flashes).
-3. Remove/forget the device from Bluetooth settings and pair fresh.
-4. Ensure devices are within 10 metres with no obstacles.
-5. Check for interference from other devices (microwaves, other Bluetooth).
-6. Update Bluetooth driver (Windows Device Manager) or firmware.
-7. Clear paired device list on the accessory (factory reset the accessory).
-CONFIDENCE: High | ESCALATION: No`
+    id: 'KB-009',
+    title: 'Bluetooth Connectivity Issues — Troubleshooting Guide',
+    section: 'Network & Connectivity',
+    tags: ['bluetooth','pairing','headphones','speaker','earbuds','airpods','not connecting','bt','wireless','pair'],
+    content: `DOCUMENT: KB-009 | Bluetooth Connectivity Issues — Troubleshooting Guide | Section: Network & Connectivity
+LAST UPDATED: 2025-01
+APPLIES TO: Phones, Laptops, Tablets, Bluetooth accessories
+
+ISSUE: Bluetooth device not connecting, failing to pair, or dropping connection.
+
+POSSIBLE CAUSE: Device not in pairing mode, wireless interference, outdated Bluetooth driver/firmware, or too many saved devices in memory.
+
+VERIFIED TROUBLESHOOTING STEPS:
+1. Toggle Bluetooth OFF and ON again on both the host device and the accessory.
+2. Put the accessory into pairing mode (usually: hold power button 5–10 seconds until LED flashes rapidly).
+3. On the host device — remove/forget the accessory from Bluetooth settings, then re-pair from scratch.
+4. Ensure devices are within 10 metres with no solid obstacles between them.
+5. Check for interference from nearby 2.4GHz devices (microwaves, other Bluetooth, cordless phones).
+6. Update the Bluetooth driver via Device Manager (Windows) or check for firmware updates.
+7. Clear the accessory's paired device memory — consult the device manual for factory reset steps.
+8. Test the accessory with a different host device to confirm the issue is not hardware failure.
+
+ESCALATION REQUIRED: No — for connectivity issues. Yes — if accessory fails to pair with any device.
+CONFIDENCE: High`
   },
   {
-    id: 'slow_performance',
-    tags: ['slow','lagging','sluggish','freeze','freezing','hanging','performance','speed','ram'],
-    content: `ISSUE: Device running slow, lagging, or freezing.
-CAUSE: Insufficient RAM, too many startup programs, full storage, malware, or thermal throttling.
-STEPS:
-1. Restart the device — this clears RAM and temp files.
-2. Check storage space — keep at least 15% free on the drive.
-3. Open Task Manager / Activity Monitor — close high CPU or RAM processes.
-4. Disable unnecessary startup programs.
-5. Run a malware/virus scan with up-to-date definitions.
-6. Check for and install OS updates.
-7. For laptops — clean vents (overheating causes thermal throttling and slowdowns).
-8. Consider adding more RAM or upgrading to SSD if hardware is old.
-CONFIDENCE: High | ESCALATION: No`
+    id: 'KB-010',
+    title: 'Slow Device Performance — Diagnosis & Optimization Guide',
+    section: 'Hardware & Performance',
+    tags: ['slow','lagging','sluggish','freeze','freezing','hanging','performance','speed','ram','memory','cpu'],
+    content: `DOCUMENT: KB-010 | Slow Device Performance — Diagnosis & Optimization Guide | Section: Hardware & Performance
+LAST UPDATED: 2025-01
+APPLIES TO: Windows PCs, Laptops, Macs, Mobile Phones
+
+ISSUE: Device running unusually slowly, lagging, freezing, or taking long to respond.
+
+POSSIBLE CAUSE: Insufficient free RAM, too many startup programs, full/fragmented storage, malware infection, outdated OS, or thermal throttling from overheating.
+
+VERIFIED TROUBLESHOOTING STEPS:
+1. Restart the device — clears RAM, closes background processes, and flushes temp files.
+2. Check free storage: keep at least 15% of drive capacity free. Delete or move unnecessary files.
+3. Open Task Manager (Windows: Ctrl+Shift+Esc) or Activity Monitor (Mac) — identify and close high-CPU/RAM processes.
+4. Disable unnecessary startup programs: Task Manager → Startup tab (Windows) or System Preferences → Login Items (Mac).
+5. Run a full malware/virus scan with up-to-date definitions.
+6. Check for and install all available OS updates — performance patches are included.
+7. For laptops: clean external vents with compressed air — thermal throttling causes severe slowdowns.
+8. Check RAM usage: if consistently above 85%, consider upgrading RAM capacity.
+9. Consider upgrading HDD to SSD for significantly improved load times (hardware recommendation).
+
+ESCALATION REQUIRED: No — for software optimization. Yes — for hardware upgrades.
+CONFIDENCE: High`
   },
   {
-    id: 'display',
-    tags: ['display','screen','monitor','flickering','black screen','brightness','resolution','pixels'],
-    content: `ISSUE: Display/screen problems — flickering, black screen, resolution issues.
-CAUSE: Loose cable, driver fault, refresh rate mismatch, or hardware damage.
-STEPS:
-1. Check all display cables (HDMI/DisplayPort/VGA) are firmly connected.
-2. Restart the device — a fresh boot often resolves driver glitches.
-3. Update or roll back display/graphics drivers.
-4. Check display refresh rate settings — match to monitor's native rate.
-5. Test with a different cable or a different monitor/display.
-6. Adjust brightness and color settings in display preferences.
-7. Boot into Safe Mode — if issue is absent, it's a software/driver problem.
-SAFETY: Do not open the display panel yourself — contains fragile components and high voltage (CFL backlights).
-CONFIDENCE: Medium | ESCALATION: Maybe`
+    id: 'KB-011',
+    title: 'Display & Screen Issues — Troubleshooting Guide',
+    section: 'Display & Visual',
+    tags: ['display','screen','monitor','flickering','black screen','brightness','resolution','pixels','blank','no display'],
+    content: `DOCUMENT: KB-011 | Display & Screen Issues — Troubleshooting Guide | Section: Display & Visual
+LAST UPDATED: 2025-01
+APPLIES TO: Laptops, Desktops with monitors, Mobile screens
+
+ISSUE: Screen flickering, blank/black display, incorrect resolution, or color issues.
+
+POSSIBLE CAUSE: Loose display cable, outdated/corrupted graphics driver, incorrect refresh rate, or hardware display damage.
+
+VERIFIED TROUBLESHOOTING STEPS:
+1. Check all display cables (HDMI / DisplayPort / VGA) are firmly connected at both ends.
+2. Restart the device — a fresh boot resolves many driver-related display glitches.
+3. Update graphics/display drivers via Device Manager or manufacturer's site (AMD/NVIDIA/Intel).
+4. Right-click Desktop → Display Settings → verify refresh rate matches monitor's native spec.
+5. Test with a different cable or connect to a different external monitor to isolate the fault.
+6. Boot into Safe Mode — if display is normal in Safe Mode, the issue is a software/driver conflict.
+7. Roll back the most recent graphics driver update if issue started after an update.
+8. For mobile screens: check for OS updates; test in safe mode to rule out app conflicts.
+
+SAFETY NOTE: Do not attempt to open display panels yourself — CFL-backlit screens contain high voltage.
+ESCALATION REQUIRED: Maybe — physical screen damage requires hardware repair.
+CONFIDENCE: Medium`
   },
   {
-    id: 'audio',
-    tags: ['audio','sound','speakers','microphone','no sound','headphone','muted','volume'],
-    content: `ISSUE: No sound, distorted audio, or microphone not working.
-CAUSE: Wrong output device selected, muted system, driver fault, or hardware damage.
-STEPS:
-1. Check volume is not muted at system level, app level, and physical knob/button.
-2. Right-click sound icon → check correct output device is selected.
-3. Unplug and re-plug headphones or speakers.
-4. Update or reinstall audio drivers from Device Manager or manufacturer site.
-5. Run the Windows Audio Troubleshooter (Settings → Troubleshoot → Audio).
-6. Test with a different audio app to isolate the issue.
-7. For microphone: check app permissions (Settings → Privacy → Microphone).
-CONFIDENCE: High | ESCALATION: No`
+    id: 'KB-012',
+    title: 'Audio & Sound Issues — Troubleshooting Guide',
+    section: 'Audio & Multimedia',
+    tags: ['audio','sound','speakers','microphone','no sound','headphone','muted','volume','mic','distorted','crackling'],
+    content: `DOCUMENT: KB-012 | Audio & Sound Issues — Troubleshooting Guide | Section: Audio & Multimedia
+LAST UPDATED: 2025-01
+APPLIES TO: Windows, macOS, Mobile Phones
+
+ISSUE: No sound output, distorted audio, microphone not working, or headphone not detected.
+
+POSSIBLE CAUSE: Wrong audio output device selected, system muted, corrupted audio driver, or hardware port/jack damage.
+
+VERIFIED TROUBLESHOOTING STEPS:
+1. Check volume is not muted at system level, application level, and on any physical knob or button.
+2. Right-click the sound icon in the taskbar → Open Sound Settings → verify correct output device is selected.
+3. Unplug and re-plug headphones or external speakers to refresh the connection.
+4. Update or reinstall audio drivers via Device Manager or download from manufacturer's support site.
+5. Run the Windows Audio Troubleshooter: Settings → System → Troubleshoot → Other troubleshooters → Audio.
+6. Test audio in a different app to determine if the issue is app-specific or system-wide.
+7. For microphone not working: Settings → Privacy & Security → Microphone → verify app permissions are ON.
+8. Check if the audio device appears in Device Manager with no warning icons.
+9. Test with a different headphone/speaker to rule out hardware failure of the audio accessory.
+
+ESCALATION REQUIRED: No — for software-related audio issues. Yes — for physical port damage.
+CONFIDENCE: High`
   }
 ];
 
@@ -1175,11 +1311,11 @@ const CHAT_RISKY_KEYWORDS = [
 ];
 
 // ── RAG RETRIEVER ────────────────────────────────────
-// Simple TF-IID keyword overlap — returns top-N chunks
+// Keyword scoring: tag match × 3 + content word frequency × 1
+// Returns top-N documents with score > 0, sorted by relevance
 function ragRetrieve(query, topN = 3) {
   const qWords = query.toLowerCase().split(/\W+/).filter(w => w.length > 2);
   const scored = RAG_DOCUMENTS.map(doc => {
-    // Score: tag matches × 3  +  content word matches × 1
     const tagScore = doc.tags.reduce((s, t) => {
       return s + (qWords.some(w => t.includes(w) || w.includes(t)) ? 3 : 0);
     }, 0);
@@ -1196,47 +1332,8 @@ function ragRetrieve(query, topN = 3) {
     .map(s => s.doc);
 }
 
-// ── SESSION STORAGE FOR API KEY ──────────────────────
-function getApiKey() { return sessionStorage.getItem('tsai_api_key') || ''; }
-function setApiKey(k) { sessionStorage.setItem('tsai_api_key', k); }
-function clearApiKey() { sessionStorage.removeItem('tsai_api_key'); }
-
 // ── CHAT STATE ───────────────────────────────────────
-let chatHistory = []; // [{role, content}]
-
-// ── API KEY CONNECT ──────────────────────────────────
-document.getElementById('saveApiKey').addEventListener('click', () => {
-  const key = document.getElementById('apiKeyInput').value.trim();
-  if (!key.startsWith('sk-ant-')) {
-    showToast('Invalid key format. Must start with sk-ant-', 'error'); return;
-  }
-  setApiKey(key);
-  showChatUI();
-  showToast('Connected! AI assistant is ready.', 'success');
-});
-
-document.getElementById('apiKeyInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('saveApiKey').click();
-});
-
-function showChatUI() {
-  document.getElementById('apiKeyBar').classList.add('hidden');
-  document.getElementById('chatContainer').classList.remove('hidden');
-}
-
-// Auto-restore key on load
-if (getApiKey()) showChatUI();
-
-// ── DISCONNECT ───────────────────────────────────────
-document.getElementById('disconnectBtn').addEventListener('click', () => {
-  clearApiKey();
-  chatHistory = [];
-  document.getElementById('chatMessages').innerHTML = '';
-  document.getElementById('chatContainer').classList.add('hidden');
-  document.getElementById('apiKeyBar').classList.remove('hidden');
-  document.getElementById('apiKeyInput').value = '';
-  showToast('API key removed from session.');
-});
+let chatHistory = [];
 
 // ── CLEAR CHAT ───────────────────────────────────────
 document.getElementById('clearChatBtn').addEventListener('click', () => {
@@ -1273,129 +1370,270 @@ document.getElementById('chatInput').addEventListener('input', function() {
   this.style.height = Math.min(this.scrollHeight, 140) + 'px';
 });
 
-// ── MAIN SEND FUNCTION ───────────────────────────────
-async function sendChatMessage() {
+// ── MAIN SEND FUNCTION — fully local, no API key needed ──
+function sendChatMessage() {
   const input = document.getElementById('chatInput');
   const query = input.value.trim();
   if (!query) return;
-  if (!getApiKey()) { showToast('Please connect your API key first.', 'error'); return; }
 
   input.value = '';
   input.style.height = 'auto';
   document.getElementById('suggestedQueries').style.display = 'none';
 
-  // Append user message
   appendChatMsg('user', query);
   chatHistory.push({ role: 'user', content: query });
 
-  // Safety check FIRST
+  // ── Safety check FIRST ────────────────────────────
   const lowerQ = query.toLowerCase();
   const riskWord = CHAT_RISKY_KEYWORDS.find(kw => lowerQ.includes(kw));
   if (riskWord) {
-    const safetyReply = `⚠️ **Safety Alert**: Your message contains a potentially dangerous situation ("${riskWord}"). **Stop using the device immediately.** Do not attempt any repairs. Disconnect from power if safe to do so and contact an authorized technician or emergency support right away.`;
-    appendChatMsg('ai', safetyReply);
-    chatHistory.push({ role: 'assistant', content: safetyReply });
+    const safetyHtml = buildSafetyResponse(riskWord);
+    setTimeout(() => {
+      showRagIndicator(false);
+      appendChatMsg('ai', safetyHtml, false, []);
+    }, 400);
+    showRagIndicator(true);
     return;
   }
 
-  // ── STEP 1: RAG Retrieval ─────────────────────────
+  // ── Step 1: RAG Retrieval ─────────────────────────
   showRagIndicator(true);
-  const retrieved = ragRetrieve(query, 3);
 
-  // ── STEP 2: Build context from retrieved docs ──────
-  const ragContext = retrieved.length > 0
-    ? retrieved.map((d, i) => `[Knowledge Base Entry ${i+1}]\n${d.content}`).join('\n\n---\n\n')
-    : null;
-
-  // ── STEP 3: Build system prompt with RAG context ───
-  const systemPrompt = `You are TechSupAI, a technical support assistant. You MUST follow these rules strictly:
-
-RULE 1 — RAG-GROUNDED ONLY: Answer ONLY using the knowledge base context provided below. Do not use outside knowledge or make up troubleshooting steps.
-
-RULE 2 — NO HALLUCINATION: If the user's issue does not match any context provided, say exactly: "I don't have verified information for this specific issue. Please use the Support Form to generate a ticket or contact support directly."
-
-RULE 3 — SAFETY FIRST: If ANY message mentions burning smell, smoke, sparks, swollen battery, electric shock, exposed wires, liquid damage, or fire — immediately respond with a safety warning and do not provide repair steps.
-
-RULE 4 — STRUCTURED RESPONSE: When you have matching context, format your answer with:
-• **Possible Cause** — brief explanation
-• **Step-by-Step Fix** — numbered steps from the knowledge base
-• **Escalation** — Yes/No/Maybe with a reason
-
-RULE 5 — HONEST CONFIDENCE: End every answer with a confidence line: "Confidence: High / Medium / Low" based on how well the context matched the question.
-
-${ragContext ? `=== RETRIEVED KNOWLEDGE BASE CONTEXT ===\n\n${ragContext}\n\n=== END CONTEXT ===` : '=== NO MATCHING CONTEXT FOUND ===\nNo relevant knowledge base entries were retrieved for this query. Apply Rule 2.'}`;
-
-  // Build messages array for API
-  const messages = [
-    ...chatHistory.slice(0, -1), // all except the just-added user msg
-    { role: 'user', content: query }
-  ];
-
-  // ── STEP 4: Call Claude API ────────────────────────
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': getApiKey(),
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: messages
-      })
-    });
-
+  // Simulate brief retrieval delay for UX realism
+  setTimeout(() => {
     showRagIndicator(false);
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      const msg = err?.error?.message || `API error ${response.status}`;
-      appendChatMsg('ai', `⚠️ API Error: ${msg}`, true);
-      chatHistory.push({ role: 'assistant', content: `Error: ${msg}` });
-      return;
-    }
+    const retrieved = ragRetrieve(query, 3);
 
-    const data = await response.json();
-    const aiText = data.content?.[0]?.text || 'No response received.';
+    // ── Step 2: Generate local response from KB ───────
+    const response = buildLocalResponse(query, retrieved);
+    appendChatMsg('ai', response.html, false, retrieved);
+    chatHistory.push({ role: 'assistant', content: response.plain });
 
-    // Format markdown-like bold and bullets
-    const formatted = formatAIResponse(aiText);
-    appendChatMsg('ai', formatted, false, retrieved.length > 0 ? retrieved.map(d => d.id) : []);
-    chatHistory.push({ role: 'assistant', content: aiText });
-
-    // Keep chat history to last 10 turns
     if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+  }, 700);
+}
 
-  } catch (err) {
-    showRagIndicator(false);
-    appendChatMsg('ai', `⚠️ Network error: ${err.message}. Check your API key and internet connection.`, true);
+// ── LOCAL RAG RESPONSE BUILDER ───────────────────────
+// Generates a full Answer / Source / Confidence response
+// directly from retrieved KB documents — no API needed.
+function buildLocalResponse(query, retrieved) {
+  if (retrieved.length === 0) {
+    const html = `
+      <div class="ai-answer-block">
+        <div class="ai-answer-label">Answer</div>
+        <div class="ai-answer-body">
+          I couldn't find verified information about this in our documentation.
+          Please use the <strong>Support Form</strong> below to generate a ticket,
+          or contact a support representative for further assistance.
+        </div>
+      </div>
+      <div class="ai-conf-block">
+        <span class="ai-conf-tag conf-tag-low">Low</span>
+        <span class="ai-conf-note">No matching knowledge base document found for this query.</span>
+      </div>`;
+    return { html, plain: 'No matching KB document found.' };
   }
+
+  // Use the top retrieved document as primary
+  const primary   = retrieved[0];
+  const secondary = retrieved.slice(1);
+
+  // Parse steps from the primary document content
+  const steps    = extractSteps(primary.content);
+  const cause    = extractField(primary.content, 'POSSIBLE CAUSE');
+  const safety   = extractField(primary.content, 'SAFETY');
+  const escalation = extractField(primary.content, 'ESCALATION REQUIRED');
+  const confLine = extractField(primary.content, 'CONFIDENCE');
+  const confidence = confLine && confLine.toLowerCase().startsWith('high')   ? 'High'
+                   : confLine && confLine.toLowerCase().startsWith('medium') ? 'Medium'
+                   : 'Medium';
+  const confClass  = confidence === 'High' ? 'conf-tag-high' : confidence === 'Medium' ? 'conf-tag-med' : 'conf-tag-low';
+
+  // Build source citation line
+  const sourceText  = `${primary.title} | ${primary.id} | Section: ${primary.section}`;
+  const sourceExtra = secondary.length > 0
+    ? ` (also referenced: ${secondary.map(d => d.id).join(', ')})`
+    : '';
+
+  // Build steps HTML
+  const stepsHtml = steps.length > 0
+    ? steps.map((s, i) =>
+        `<div class="ai-step"><span class="ai-step-num">${i+1}</span><span>${escapeHTML(s)}</span></div>`
+      ).join('')
+    : '<p>Please refer to the source document for detailed steps.</p>';
+
+  // Safety block
+  const safetyHtml = safety
+    ? `<div class="ai-safety-inline">⚠️ <strong>Safety Note:</strong> ${escapeHTML(safety)}</div>`
+    : '';
+
+  // Escalation note
+  const escalHtml = escalation
+    ? `<div class="ai-escalation-inline">📌 <strong>Escalation:</strong> ${escapeHTML(escalation)}</div>`
+    : '';
+
+  const confNote = confidence === 'High'
+    ? 'The retrieved document directly addresses this issue.'
+    : 'The retrieved document partially matches — verify steps apply to your exact model.';
+
+  const html = `
+    <div class="ai-answer-block">
+      <div class="ai-answer-label">Answer</div>
+      <div class="ai-answer-body">
+        ${cause ? `<p><strong>Possible Cause:</strong> ${escapeHTML(cause)}</p>` : ''}
+        <p><strong>Step-by-Step Fix:</strong></p>
+        ${stepsHtml}
+        ${safetyHtml}
+        ${escalHtml}
+      </div>
+    </div>
+    <div class="ai-source-block">
+      <span class="ai-source-icon">📄</span>
+      <div>
+        <div class="ai-source-label">Source</div>
+        <div class="ai-source-val">${escapeHTML(sourceText + sourceExtra)}</div>
+      </div>
+    </div>
+    <div class="ai-conf-block">
+      <span class="ai-conf-tag ${confClass}">${confidence}</span>
+      <span class="ai-conf-note">${confNote}</span>
+    </div>`;
+
+  const plain = `Answer from ${primary.id}: ${primary.title}. Confidence: ${confidence}.`;
+  return { html, plain };
+}
+
+// ── SAFETY RESPONSE BUILDER ───────────────────────────
+function buildSafetyResponse(riskWord) {
+  return `
+    <div class="ai-answer-block">
+      <div class="ai-answer-label" style="color:var(--danger)">⚠️ Safety Alert</div>
+      <div class="ai-answer-body">
+        <p>Your message mentions a potentially dangerous condition: <strong>"${escapeHTML(riskWord)}"</strong>.</p>
+        <p><strong>Stop using the device immediately.</strong> Do not attempt any repairs or troubleshooting steps.</p>
+        <div class="ai-step"><span class="ai-step-num" style="background:var(--danger-bg);border-color:var(--danger);color:var(--danger)">1</span><span>Disconnect the device from power immediately if it is safe to do so.</span></div>
+        <div class="ai-step"><span class="ai-step-num" style="background:var(--danger-bg);border-color:var(--danger);color:var(--danger)">2</span><span>Place it in a safe, open, ventilated area away from flammable materials.</span></div>
+        <div class="ai-step"><span class="ai-step-num" style="background:var(--danger-bg);border-color:var(--danger);color:var(--danger)">3</span><span>Do not charge, open, or attempt to repair the device.</span></div>
+        <div class="ai-step"><span class="ai-step-num" style="background:var(--danger-bg);border-color:var(--danger);color:var(--danger)">4</span><span>Contact an authorized technician or the manufacturer's emergency support line immediately.</span></div>
+        <div class="ai-step"><span class="ai-step-num" style="background:var(--danger-bg);border-color:var(--danger);color:var(--danger)">5</span><span>If there is visible fire or smoke — evacuate the area and call emergency services.</span></div>
+      </div>
+    </div>
+    <div class="ai-source-block" style="border-color:rgba(239,68,68,0.3);background:var(--danger-bg)">
+      <span class="ai-source-icon">🛡️</span>
+      <div>
+        <div class="ai-source-label" style="color:var(--danger)">Source</div>
+        <div class="ai-source-val">Safety Override Policy | TechSupAI Safety Guidelines</div>
+      </div>
+    </div>
+    <div class="ai-conf-block">
+      <span class="ai-conf-tag conf-tag-low" style="background:var(--danger-bg);color:var(--danger)">Escalation Required</span>
+      <span class="ai-conf-note">Safety risk detected — no troubleshooting steps provided.</span>
+    </div>`;
+}
+
+// ── EXTRACT STEPS FROM DOCUMENT CONTENT ──────────────
+function extractSteps(content) {
+  const steps = [];
+  // Match lines like "1. step text" or "1) step text"
+  const lines = content.split('\n');
+  let inSteps = false;
+  for (const line of lines) {
+    if (/VERIFIED TROUBLESHOOTING STEPS/i.test(line)) { inSteps = true; continue; }
+    if (inSteps && /^(ESCALATION|SAFETY|CONFIDENCE|APPLIES|LAST|DOCUMENT)/i.test(line)) { inSteps = false; }
+    if (inSteps) {
+      const m = line.match(/^\d+[\.\)]\s+(.+)/);
+      if (m) steps.push(m[1].trim());
+    }
+  }
+  return steps;
+}
+
+// ── EXTRACT NAMED FIELD FROM DOCUMENT CONTENT ────────
+function extractField(content, fieldName) {
+  const regex = new RegExp(`${fieldName}[:\\s]+(.+)`, 'i');
+  const match = content.match(regex);
+  return match ? match[1].trim() : null;
 }
 
 // ── FORMAT AI RESPONSE ───────────────────────────────
+// Parses the mandatory Answer/Source/Confidence format and renders styled blocks
 function formatAIResponse(text) {
+  // Try to parse structured response blocks
+  const answerMatch  = text.match(/\*\*Answer:\*\*\s*([\s\S]*?)(?=\*\*Source:|$)/i);
+  const sourceMatch  = text.match(/\*\*Source:\*\*\s*([\s\S]*?)(?=\*\*Confidence:|$)/i);
+  const confMatch    = text.match(/\*\*Confidence:\*\*\s*([\s\S]*?)(?=\n\n|$)/i);
+
+  if (answerMatch) {
+    // Structured response — render in formatted blocks
+    const answerRaw = answerMatch[1].trim();
+    const sourceRaw = sourceMatch ? sourceMatch[1].trim() : null;
+    const confRaw   = confMatch   ? confMatch[1].trim()   : null;
+
+    // Format the answer body
+    const answerFormatted = formatBody(answerRaw);
+
+    // Confidence color
+    const confLower = (confRaw||'').toLowerCase();
+    const confClass = confLower.startsWith('high')   ? 'conf-tag-high'
+                    : confLower.startsWith('medium') ? 'conf-tag-med'
+                    : 'conf-tag-low';
+    const confLabel = confLower.startsWith('high')   ? 'High'
+                    : confLower.startsWith('medium') ? 'Medium'
+                    : 'Low';
+    const confNote  = confRaw ? confRaw.replace(/^(high|medium|low)[:\s—-]*/i,'').trim() : '';
+
+    return `
+      <div class="ai-answer-block">
+        <div class="ai-answer-label">Answer</div>
+        <div class="ai-answer-body">${answerFormatted}</div>
+      </div>
+      ${sourceRaw ? `
+      <div class="ai-source-block">
+        <span class="ai-source-icon">📄</span>
+        <div>
+          <div class="ai-source-label">Source</div>
+          <div class="ai-source-val">${escapeHTML(sourceRaw)}</div>
+        </div>
+      </div>` : ''}
+      ${confRaw ? `
+      <div class="ai-conf-block">
+        <span class="ai-conf-tag ${confClass}">${confLabel}</span>
+        ${confNote ? `<span class="ai-conf-note">${escapeHTML(confNote)}</span>` : ''}
+      </div>` : ''}
+    `;
+  }
+
+  // Fallback for unstructured responses (safety alerts etc.)
+  return `<div class="ai-answer-body">${formatBody(text)}</div>`;
+}
+
+// ── FORMAT BODY TEXT ─────────────────────────────────
+function formatBody(text) {
   return text
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/^(\d+)\. (.+)$/gm, '<div class="ai-step"><span class="ai-step-num">$1</span><span>$2</span></div>')
-    .replace(/^• (.+)$/gm, '<div class="ai-bullet">• $1</div>')
-    .replace(/^— (.+)$/gm, '<div class="ai-bullet">— $1</div>')
-    .replace(/\n\n/g, '</p><p>')
+    .replace(/^(\d+)\.\s+(.+)$/gm, '<div class="ai-step"><span class="ai-step-num">$1</span><span>$2</span></div>')
+    .replace(/^[•\-]\s+(.+)$/gm, '<div class="ai-bullet"><span class="bullet-dot">•</span><span>$1</span></div>')
+    .replace(/\n\n+/g, '</p><p class="ai-para">')
     .replace(/\n/g, '<br>');
 }
 
 // ── APPEND CHAT MESSAGE ──────────────────────────────
-function appendChatMsg(role, content, isError = false, retrievedIds = []) {
+function appendChatMsg(role, content, isError = false, retrievedDocs = []) {
   const msgs = document.getElementById('chatMessages');
   const div = document.createElement('div');
   div.className = `chat-msg ${role === 'user' ? 'user-msg' : 'ai-msg'}${isError ? ' error-msg-chat' : ''}`;
 
-  const ragTag = (role === 'ai' && retrievedIds.length > 0)
-    ? `<div class="rag-source-tag">📚 RAG: ${retrievedIds.join(', ')}</div>`
+  // Build retrieval badge showing KB article IDs + titles
+  const ragTag = (role === 'ai' && retrievedDocs.length > 0)
+    ? `<div class="rag-source-tag">
+        <span class="rag-tag-icon">📚</span>
+        <span class="rag-tag-label">Retrieved from knowledge base:</span>
+        <span class="rag-tag-docs">${retrievedDocs.map(d =>
+          `<span class="rag-doc-pill" title="${d.title}">${d.id}</span>`
+        ).join('')}</span>
+       </div>`
     : '';
 
   if (role === 'user') {
@@ -1404,10 +1642,10 @@ function appendChatMsg(role, content, isError = false, retrievedIds = []) {
     div.innerHTML = `
       <div class="msg-avatar">✦</div>
       <div class="msg-bubble">
-        <p>${content}</p>
+        ${content}
         ${ragTag}
         <div class="msg-actions">
-          <button class="msg-action-btn" onclick="prefillForm('${escapeHTML(content).replace(/'/g, '&apos;')}')">📋 Fill Support Form</button>
+          <button class="msg-action-btn" onclick="prefillForm(this)">📋 Fill Support Form</button>
         </div>
       </div>`;
   }
@@ -1435,29 +1673,36 @@ function showRagIndicator(show) {
 }
 
 // ── PREFILL FORM ─────────────────────────────────────
-function prefillForm(aiContent) {
+function prefillForm(btn) {
+  // Walk up to find the message bubble and extract text
+  const bubble = btn.closest('.msg-bubble');
+  const textContent = bubble ? bubble.innerText : '';
   document.getElementById('support').scrollIntoView({ behavior: 'smooth' });
-  // Extract issue type hint from content
-  const lower = aiContent.toLowerCase();
+  const lower = textContent.toLowerCase();
   const issueMap = {
     'charging': 'Not charging',
-    'wifi': 'Wi-Fi not working',
     'wi-fi': 'Wi-Fi not working',
+    'wifi': 'Wi-Fi not working',
     'printer': 'Printer not printing',
     'overheat': 'Overheating',
     'install': 'Software installation issue',
     'turn on': 'Not turning on',
     'login': 'Login issue',
-    'error code': 'Error code issue'
+    'error code': 'Error code issue',
+    'bluetooth': 'Other',
+    'slow': 'Other',
+    'display': 'Other',
+    'audio': 'Other',
+    'sound': 'Other'
   };
   for (const [kw, val] of Object.entries(issueMap)) {
     if (lower.includes(kw)) {
       const sel = document.getElementById('issueType');
-      if (sel) { for (const opt of sel.options) { if (opt.value === val) { sel.value = val; break; } } }
+      if (sel) for (const opt of sel.options) { if (opt.value === val) { sel.value = val; break; } }
       break;
     }
   }
-  showToast('Scrolled to Support Form. Fill in your details.', 'success');
+  showToast('Scrolled to Support Form — fill in your details to generate a ticket.', 'success');
 }
 
 // ── ESCAPE HTML ──────────────────────────────────────
